@@ -8,6 +8,7 @@ version: 2
 # Set the OS, Python version and other tools you might need
 build:
   # os: Rocky-Linux-9.3
+  os: ubuntu-lts-latest
   tools:
     python: "3.9.18"
 
