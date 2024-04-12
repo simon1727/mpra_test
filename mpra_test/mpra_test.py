@@ -32,29 +32,20 @@ class MPRA_Dataset:
     @property
     def shape(self):
         return self.data.shape
+    
+    @property
+    def n_seq(self):
+        return self.X.shape[0]
+    @property
+    def n_readout(self):
+        return self.Y.shape[1]
+    @property
+    def n_seqXreadout(self):
+        return self.n_seq * self.n_readout
+    @property
+    def n_readoutXseq(self):
+        return self.n_readout * self.n_seq
 
-    # IO-related
-    @staticmethod
-    def load(name_paper: str, name_dataset: str, folder = __PATH__):
-        with open(os.path.join(folder, name_paper, name_dataset + '.yaml'), 'r') as file:
-            info = yaml.safe_load(file)
-        data = pd.read_csv(os.path.join(folder, name_paper, name_dataset + '.csv'))
-        return MPRA_Dataset(folder, name_paper, name_dataset, info, data)
-
-    def reload(self):
-        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
-        with open(file + '.yaml', 'r') as f:
-            self.info = yaml.safe_load(f)
-        self.data = pd.read_csv(file + '.csv')
-        self.X, self.Y, self.obs_X, self.obs_Y = data_to_XYobs(self.data)
-
-    def save(self):
-        mkdir(os.path.join(self.folder, self.name_paper))
-        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
-        with open(file + '.yaml', 'w') as f:
-            yaml.safe_dump(self.info, f)
-        self.data.to_csv(file + '.csv', index = False)
- 
     # PyTorch-related
     def to_Dataset(self, cols_Y: list = []):
         cols_Y = cols_Y if cols_Y else [col for col in self.data.columns if col.startswith('Y: ')]
@@ -118,6 +109,28 @@ class MPRA_Dataset:
                 raise TypeError(f'List of distinct index: {set(i.__class__ for i in index)}')
         else:
             raise TypeError(f'Unsupported index: {index.__class__}')
+
+    # IO-related
+    @staticmethod
+    def load(name_paper: str, name_dataset: str, folder = __PATH__):
+        with open(os.path.join(folder, name_paper, name_dataset + '.yaml'), 'r') as file:
+            info = yaml.safe_load(file)
+        data = pd.read_csv(os.path.join(folder, name_paper, name_dataset + '.csv'))
+        return MPRA_Dataset(folder, name_paper, name_dataset, info, data)
+
+    def reload(self):
+        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
+        with open(file + '.yaml', 'r') as f:
+            self.info = yaml.safe_load(f)
+        self.data = pd.read_csv(file + '.csv')
+        self.X, self.Y, self.obs_X, self.obs_Y = data_to_XYobs(self.data)
+
+    def save(self):
+        mkdir(os.path.join(self.folder, self.name_paper))
+        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
+        with open(file + '.yaml', 'w') as f:
+            yaml.safe_dump(self.info, f)
+        self.data.to_csv(file + '.csv', index = False)
 
     @property
     def seq(self):
