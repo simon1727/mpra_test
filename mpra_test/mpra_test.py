@@ -60,6 +60,9 @@ class MPRA_Dataset:
         description += "readout: '" + "', '".join(readout_columns) + "'\n"
 
         return description
+    
+    def __repr__(self):
+        return self.__str__()
 
     # IO-related
     @staticmethod
@@ -102,7 +105,6 @@ class MPRA_Dataset:
         cols_Y = cols_Y if cols_Y else [col for col in self.data.columns if col.startswith('Y: ')]
 
         #FIXME: change the hard-coded "3:" to a more general way
-
         cols_Y = [col[3:] if col.startswith('Y: ') else col for col in cols_Y]
         #TODO: should not directly delete the rows with missing values without warning
         mask = self.Y[cols_Y].notna().all(axis = 1)

@@ -34,12 +34,17 @@ def seqs_to_onehot(
     len_div = 1,
 ):
     len_max = (len_max + len_div - 1) // len_div * len_div
+
+    # Function to adjust sequence length to len_max
     def to_len_max(seq):
-        len_seq = len(seq)
-        # FIX ME: this is not a good way to pad sequences
-        len_0 = (len_max - len_seq + 1) // 2
-        len_1 = (len_max - len_seq) // 2
-        return 'N' * len_0 + seq + 'N' * len_1 if len_seq < len_max else seq[-len_0:len_1]
+        if len(seq) < len_max:
+            # Pad sequence if it's shorter than len_max
+            padding = (len_max - len(seq))
+            return seq + 'N' * padding
+        else:
+            # Truncate sequence if it's longer than len_max
+            return seq[:len_max]
+        
     seqs = [to_len_max(seq) for seq in seqs]
 
     alphabet = 'ATGC'
