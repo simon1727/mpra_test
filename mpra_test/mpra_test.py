@@ -55,10 +55,13 @@ class MPRA_Dataset:
         readout_columns = [col for col in self.Y.columns]
         
         # Displaying observable and readout columns
-        description += "obs X: '" + "', '".join(obs_seq_columns) + "'\n"
-        description += "obs Y: '" + "', '".join(obs_readout_columns) + "'\n"
-        description += "readout: '" + "', '".join(readout_columns) + "'\n"
-
+        description += "    obs X: '" + "', '".join(obs_seq_columns) + "'\n"
+        description += "    obs Y: '" + "', '".join(obs_readout_columns) + "'\n"
+        description += "    readout: '" + "', '".join(readout_columns) + "'\n"
+        # Displaying additional information in info
+        description += "Additional information:\n"
+        for key, value in self.info.items():
+            description += f"    {key}: {value}\n"
         return description
     
     def __repr__(self):
