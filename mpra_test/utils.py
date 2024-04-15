@@ -9,13 +9,15 @@ def data_to_XYobs(data):
     cols_obs_X = [col for col in data.columns if col.startswith('obs_X: ')]
     cols_obs_Y = [col for col in data.columns if col.startswith('obs_Y: ')]
     X, Y, obs_X, obs_Y = data[cols_X], data[cols_Y], data[cols_obs_X], data[cols_obs_Y]
+
     # rename columns to be without prefix
-    Y = Y.rename(columns = lambda col: col[3:])
-    obs_X = obs_X.rename(columns = lambda col: col[7:])
-    obs_Y = obs_Y.rename(columns = lambda col: col[7:])
+    Y = Y.rename(columns = lambda col: col.replace('Y: ', ''))
+    obs_X = obs_X.rename(columns = lambda col: col.replace('obs_X: ', ''))
+    obs_Y = obs_Y.rename(columns = lambda col: col.replace('obs_Y: ', ''))
     return X, Y, obs_X, obs_Y
 
 def XYobs_to_data(X, Y, obs_X, obs_Y):
+    # add prefix to columns
     Y = Y.rename(columns = lambda col: 'Y: ' + col)
     obs_X = obs_X.rename(columns = lambda col: 'obs_X: ' + col)
     obs_Y = obs_Y.rename(columns = lambda col: 'obs_Y: ' + col)
@@ -29,11 +31,12 @@ def mkdir(folder):
 def seqs_to_onehot(
     seqs,
     len_max = 64,
-    len_div = 16,
+    len_div = 1,
 ):
     len_max = (len_max + len_div - 1) // len_div * len_div
     def to_len_max(seq):
         len_seq = len(seq)
+        # FIX ME: this is not a good way to pad sequences
         len_0 = (len_max - len_seq + 1) // 2
         len_1 = (len_max - len_seq) // 2
         return 'N' * len_0 + seq + 'N' * len_1 if len_seq < len_max else seq[-len_0:len_1]

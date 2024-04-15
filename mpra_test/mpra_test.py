@@ -3,11 +3,11 @@
 import yaml
 import pandas as pd
 import numpy as np
-
+import os
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-from .utils import *
+from .utils import data_to_XYobs, XYobs_to_data, mkdir, seqs_to_onehot
 
 __PATH__ = '/data/tuxm/project/MPRA-collection/data/mpra_test/'
 
@@ -32,7 +32,6 @@ class MPRA_Dataset:
     @property
     def shape(self):
         return self.data.shape
-    
     @property
     def n_seq(self):
         return self.X.shape[0]
@@ -45,11 +44,67 @@ class MPRA_Dataset:
     @property
     def n_readoutXseq(self):
         return self.n_readout * self.n_seq
+    
+    def __str__(self) -> str:
+        # Basic dataset information
+        description = f"MPRA_Dataset object with n_seq × n_readout = {self.n_seq} × {self.n_readout}\n"
+        
+        # Identifying observable and readout columns, assuming a naming convention is used.
+        obs_seq_columns = [col for col in self.obs_X.columns]
+        obs_readout_columns = [col for col in self.obs_Y.columns]
+        readout_columns = [col for col in self.Y.columns]
+        
+        # Displaying observable and readout columns
+        description += "obs X: '" + "', '".join(obs_seq_columns) + "'\n"
+        description += "obs Y: '" + "', '".join(obs_readout_columns) + "'\n"
+        description += "readout: '" + "', '".join(readout_columns) + "'\n"
 
+        return description
+
+    # IO-related
+    @staticmethod
+    def load(name_paper: str, name_dataset: str, folder=__PATH__):
+        """Loads dataset information and data from YAML and CSV files."""
+        try:
+            with open(os.path.join(folder, name_paper, f'{name_dataset}.yaml'), 'r') as file:
+                info = yaml.safe_load(file)
+            data = pd.read_csv(os.path.join(folder, name_paper, f'{name_dataset}.csv'))
+            return MPRA_Dataset(folder, name_paper, name_dataset, info, data)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Unable to load dataset: {e}")
+        except Exception as e:
+            raise Exception(f"An error occurred while loading the dataset: {e}")
+
+    def reload(self):
+        """Reloads dataset from source files based on current configuration."""
+        try:
+            file_path = os.path.join(self.folder, self.name_paper, self.name_dataset)
+            with open(f'{file_path}.yaml', 'r') as f:
+                self.info = yaml.safe_load(f)
+            self.data = pd.read_csv(f'{file_path}.csv')
+            self.X, self.Y, self.obs_X, self.obs_Y = self._decompose_data(self.data)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Unable to reload dataset: {e}")
+        except Exception as e:
+            raise Exception(f"An error occurred while reloading the dataset: {e}")
+
+    def save(self):
+        """Saves the current dataset state to YAML and CSV files."""
+
+        mkdir(os.path.join(self.folder, self.name_paper))
+        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
+        with open(file + '.yaml', 'w') as f:
+            yaml.safe_dump(self.info, f)
+        self.data.to_csv(file + '.csv', index = False)
+ 
     # PyTorch-related
     def to_Dataset(self, cols_Y: list = []):
         cols_Y = cols_Y if cols_Y else [col for col in self.data.columns if col.startswith('Y: ')]
+
+        #FIXME: change the hard-coded "3:" to a more general way
+
         cols_Y = [col[3:] if col.startswith('Y: ') else col for col in cols_Y]
+        #TODO: should not directly delete the rows with missing values without warning
         mask = self.Y[cols_Y].notna().all(axis = 1)
         len_max = self.X['X'][mask].str.len().max()
         _X = torch.Tensor(seqs_to_onehot(self.X['X'][mask].values, len_max=len_max)).transpose(1, 2)
@@ -63,7 +118,7 @@ class MPRA_Dataset:
         *args, **kwargs,
     ):
         return DataLoader(self.to_Dataset(*args, **kwargs), 
-            batch_size = batch_size, 
+            batch_size = batch_size,
             num_workers = num_workers, 
             shuffle = shuffle,
         )
@@ -109,28 +164,6 @@ class MPRA_Dataset:
                 raise TypeError(f'List of distinct index: {set(i.__class__ for i in index)}')
         else:
             raise TypeError(f'Unsupported index: {index.__class__}')
-
-    # IO-related
-    @staticmethod
-    def load(name_paper: str, name_dataset: str, folder = __PATH__):
-        with open(os.path.join(folder, name_paper, name_dataset + '.yaml'), 'r') as file:
-            info = yaml.safe_load(file)
-        data = pd.read_csv(os.path.join(folder, name_paper, name_dataset + '.csv'))
-        return MPRA_Dataset(folder, name_paper, name_dataset, info, data)
-
-    def reload(self):
-        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
-        with open(file + '.yaml', 'r') as f:
-            self.info = yaml.safe_load(f)
-        self.data = pd.read_csv(file + '.csv')
-        self.X, self.Y, self.obs_X, self.obs_Y = data_to_XYobs(self.data)
-
-    def save(self):
-        mkdir(os.path.join(self.folder, self.name_paper))
-        file = os.path.join(self.folder, self.name_paper, self.name_dataset)
-        with open(file + '.yaml', 'w') as f:
-            yaml.safe_dump(self.info, f)
-        self.data.to_csv(file + '.csv', index = False)
 
     @property
     def seq(self):
