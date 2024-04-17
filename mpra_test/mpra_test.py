@@ -109,6 +109,7 @@ class MPRA_Dataset:
 
         #FIXME: change the hard-coded "3:" to a more general way
         cols_Y = [col[3:] if col.startswith('Y: ') else col for col in cols_Y]
+
         #TODO: should not directly delete the rows with missing values without warning
         mask = self.Y[cols_Y].notna().all(axis = 1)
         len_max = self.X['X'][mask].str.len().max()
@@ -129,46 +130,26 @@ class MPRA_Dataset:
         )
 
     def __getitem__(self, index):
-        if isinstance(index, int):
-            return self.data.iloc[index]
-        elif isinstance(index, str):
-            return self.data[index]
-        elif isinstance(index, slice):
+        # Check if index is a simple type (int, str, slice) or a pandas compatible index (list, Series, array)
+        if isinstance(index, (int, str, slice, list, pd.Series, np.ndarray, torch.Tensor)):
+            # Normalize torch.Tensor to list
+            if isinstance(index, torch.Tensor):
+                index = index.tolist()
+
+            # Using pandas DataFrame indexing directly handles int, str, slice, list of ints, and boolean array
+            try:
+                new_data = self.data.loc[index]
+            except KeyError:
+                raise KeyError("Provided index is out of bounds or invalid.")
+            
+            # Create a new MPRA_Dataset with the selected data
             return MPRA_Dataset(
-                self.folder, self.name_paper, self.name_dataset, 
-                self.info, self.data.iloc[index], 
+                self.folder, self.name_paper, self.name_dataset,
+                self.info, new_data
             )
-        elif isinstance(index, pd.Series):
-            return MPRA_Dataset(
-                self.folder, self.name_paper, self.name_dataset, 
-                self.info, self.data[index], 
-            )
-        elif isinstance(index, np.ndarray):
-            return MPRA_Dataset(
-                self.folder, self.name_paper, self.name_dataset, 
-                self.info, self.data.iloc[index], 
-            )
-        elif isinstance(index, torch.Tensor):
-            index = index.tolist()
-            return MPRA_Dataset(
-                self.folder, self.name_paper, self.name_dataset, 
-                self.info, self.data.iloc[index], 
-            )
-        elif isinstance(index, list):
-            if all(isinstance(i, int) for i in index):
-                return MPRA_Dataset(
-                    self.folder, self.name_paper, self.name_dataset, 
-                    self.info, self.data.iloc[index], 
-                )
-            elif all(isinstance(i, str) for i in index):
-                return MPRA_Dataset(
-                    self.folder, self.name_paper, self.name_dataset, 
-                    self.info, self.data[index], 
-                )
-            else:
-                raise TypeError(f'List of distinct index: {set(i.__class__ for i in index)}')
         else:
-            raise TypeError(f'Unsupported index: {index.__class__}')
+            raise TypeError(f"Unsupported index type: {type(index).__name__}")
+        
 
     @property
     def seq(self):
