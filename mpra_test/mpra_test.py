@@ -23,8 +23,16 @@ class MPRA_Dataset:
         self.name_dataset = name_dataset
         
         self.info = info
-        self.data = data if data.shape != (0, 0) else XYobs_to_data(X, Y, obs_X, obs_Y)
-        self.X, self.Y, self.obs_X, self.obs_Y = data_to_XYobs(self.data)
+        if data.shape == (0, 0) and X.shape == (0, 0):
+            raise ValueError("ONLY ONE of 'data' or 'X' should be provided, but not NEITHER.")
+        elif data.shape == (0, 0):
+            self.data = XYobs_to_data(X, Y, obs_X, obs_Y)
+            self.X, self.Y, self.obs_X, self.obs_Y = X, Y, obs_X, obs_Y
+        elif X.shape == (0, 0):
+            self.data = data
+            self.X, self.Y, self.obs_X, self.obs_Y = data_to_XYobs(data)
+        else:
+            raise ValueError("ONLY ONE of 'data' or 'X' should be provided, but not BOTH.")
 
     def __len__(self):
         return self.data.shape[0]
@@ -88,7 +96,7 @@ class MPRA_Dataset:
             with open(f'{file_path}.yaml', 'r') as f:
                 self.info = yaml.safe_load(f)
             self.data = pd.read_csv(f'{file_path}.csv')
-            self.X, self.Y, self.obs_X, self.obs_Y = self._decompose_data(self.data)
+            self.X, self.Y, self.obs_X, self.obs_Y = data_to_XYobs(self.data)
         except FileNotFoundError as e:
             raise FileNotFoundError(f"Unable to reload dataset: {e}")
         except Exception as e:
@@ -138,14 +146,14 @@ class MPRA_Dataset:
 
             # Using pandas DataFrame indexing directly handles int, str, slice, list of ints, and boolean array
             try:
-                new_data = self.data.loc[index]
+                _data = self.data.loc[index]
             except KeyError:
                 raise KeyError("Provided index is out of bounds or invalid.")
             
             # Create a new MPRA_Dataset with the selected data
             return MPRA_Dataset(
                 self.folder, self.name_paper, self.name_dataset,
-                self.info, new_data
+                self.info, _data
             )
         else:
             raise TypeError(f"Unsupported index type: {type(index).__name__}")

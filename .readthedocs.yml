@@ -10,8 +10,7 @@ build:
   # os: Rocky-Linux-9.3
   os: ubuntu-lts-latest
   tools:
-    # python: "3.9.18"
-    python: "3.9"
+    python: "3.10"
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
