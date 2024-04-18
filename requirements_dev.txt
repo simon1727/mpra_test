@@ -10,3 +10,7 @@ twine==1.14.0
 Click==7.1.2
 furo
 myst-parser
+pyyaml
+pandas
+numpy
+torch
