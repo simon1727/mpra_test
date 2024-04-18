@@ -10,22 +10,23 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=7.0', 
+requirements = ['Click>=7.0',
     'pyyaml==6.0.1',
     'pandas==2.2.2',
     'numpy==1.26.4',
     'torch',
 ]
 
-test_requirements = ['Click>=7.0', 
+test_requirements = ['Click>=7.0',
     'pyyaml==6.0.1',
     'pandas==2.2.2',
-    'numpy==1.26.4', ]
+    'numpy==1.26.4',
+]
 
 setup(
     author="Yilun Sheng",
     author_email='simon1727@qq.com',
-    python_requires='>=3.6',
+    python_requires='>=3.10',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
