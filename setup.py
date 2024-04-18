@@ -14,10 +14,13 @@ requirements = ['Click>=7.0',
     'pyyaml==6.0.1',
     'pandas==2.2.2',
     'numpy==1.26.4',
-    'pytorch==2.1.2',
+    'torch',
 ]
 
-test_requirements = [ ]
+test_requirements = ['Click>=7.0', 
+    'pyyaml==6.0.1',
+    'pandas==2.2.2',
+    'numpy==1.26.4', ]
 
 setup(
     author="Yilun Sheng",
