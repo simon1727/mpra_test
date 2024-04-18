@@ -7,7 +7,7 @@ Welcome to MPRA Test's documentation!
 
    readme
    installation
-   usage
+   usage.md
    modules
    contributing
    authors
